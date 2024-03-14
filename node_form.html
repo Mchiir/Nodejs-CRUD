@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+        <link rel="stylesheet" href="node_form.css">
+    </head>
+    <body>
+<div id="parent">
+<div>
+    <!--//[type]  route where nodejs will receive data; -->
+<form id="form1" method="POST">    
+      <div>
+          <label for="fname">First Name</label> <br>
+      <input type="text" id="fname" name="firstname" placeholder="Your name.." required>
+      </div> <br>
+      <div>
+          <label for="lname">Last Name</label> <br>
+      <input type="text" id="lname" name="lastname" placeholder="Your last name.." required>
+      </div> <br>
+  
+      <div>
+          <label for="country">Country</label>
+      <select id="country" name="country" required>
+        <option value="australia">Australia</option>
+        <option value="canada" selected>Canada</option>
+        <option value="usa">USA</option>
+      </select>
+      </div> <br>
+  
+      <div><input type="submit" value="Submit"></div>
+      <div><input type="reset" value="Clear"></div>
+    </div>
+</form>
+</div>
+<div id="display_form"></div>
+<script>
+    $(document).ready(()=>{
+        $('form').submit((event)=>{
+            event.preventDefault();
+            post();
+            add_display_btn();
+    });
+});
+        var User1 = {
+        Names:{
+            first:fname,
+            second:lname
+        },
+        Country:country
+      };
+      /*
+      for(var values in User1){
+        if(typeof User1[values] === 'object'){
+            for(var sub1 in User1[values]){
+                console.log(sub1 +": "+ User1[values][sub1]);
+            }
+        }else{
+            console.log(values +": "+ User1[values]);
+        }
+      }  */ 
+     function post(){
+        var fname = $('#fname').val();
+        var lname = $('#lname').val();
+        var country = $('#country').val();
+        var formData = {
+        fname,
+        lname,
+        country
+      }
+        $.ajax({
+        type:'POST',
+        url:'http://localhost:4020/submit_form',
+        data:formData,
+        success: (response)=>{
+            add_display_btn();
+            console.log('New user created OK');
+        },
+        error: (xhr, status, error)=>{
+            console.error({error});
+            }
+        });
+    }
+    
+    function add_display_btn() {
+        var form = $('form');
+            if($('#display').length === 0) {
+            var btn = $('<button>',{
+            type:'button',
+            text: 'Want_to_edit?',
+            title: 'click_to edit!',
+            id:'display',
+            click: ()=>{get();}
+            });
+            form.append(btn);
+        }
+    }
+  
+    function get(){
+        $.ajax({
+        type:'GET',
+        url:'http://localhost:4020/last_record',
+        success: (response)=>{
+                display(response);
+                // console.log('Returned data from the backend: \n'+response);
+            }
+        });
+    }
+       
+    function display(response){
+        var form = $('<form>');
+            form.html(`
+        <div>
+           <label for="fname">First Name</label> <br>
+           <input type="text" id="fname" class='fname' name="firstname" placeholder="Your name.." value='${response[1]}''>
+        </div> <br>
+  
+        <div>
+           <label for="lname">Last Name</label> <br>
+           <input type="text" id="lname" class='lname' name="lastname" placeholder="Your last name.." value='${response[2]}'>
+        </div> <br>
+
+        <div>
+          <label for="lname">Country</label> <br>
+          <input type="text" id="country" class='country' name="lastname" placeholder="Your last name.." value='${response[3]}'>
+        </div> <br>
+
+    <div id='display_btns'>
+        <div>
+        <button type='button' onclick='edit(${response[0]})' title='edit_your_data'>Edit</button>
+        </div>
+        <div>
+        <button type='button' onclick='cancel()'>Cancel</button>
+      </div>      
+      <div>
+        <button type='button' title='Delete the record.' onclick='delete_data(${response[0]})'>Delete</button>
+        </div>
+    </div>
+            `);
+            $('#display_form').css({backgroundColor:'lighblue'}).empty().append(form);
+       }
+    
+       function edit(id) {
+        var edited_fname = $('.fname').val();
+        var edited_lname = $('.lname').val();
+        var edited_country = $('.country').val();
+
+        var edited_data = {
+            id:id,
+            fname:edited_fname,
+            lname:edited_lname,
+            country:edited_country
+        }
+        $.ajax({
+            type:'PUT',
+            url:'http://localhost:4020/update_data',
+            data:edited_data,
+            success: (response)=>{
+                console.log('Data updated successfully');
+                location.reload();
+            },
+            error: (xhr,status,error)=>{
+                console.error({error});
+            }
+        });
+    }
+
+    function delete_data(id) {
+        var delete_obj = {
+            id:id
+        }
+        $.ajax({
+            type:'DELETE',
+            url:'http://localhost:4020/delete_data',
+            data:delete_obj,
+            success:()=>{
+                console.log('Record deleted successfully');
+                location.reload();
+            },
+            error:(xhr,status,error)=>{
+                console.error({error});
+            }
+        });
+      }
+
+        function cancel(){
+        var parent_form = $('#parent');
+        var edit_form =  $('#display_form');
+        // $('body').empty().append(parent_form);
+        location.reload();
+    }
+</script>
+</body>
+</html>
+
+
